@@ -1,3 +1,33 @@
-langchain-community
-langchain-text-splitters
-pypdf
+# Core UI
+streamlit>=1.35.0
+
+# LLM APIs
+google-genai>=1.0.0
+groq>=0.9.0
+
+# Embeddings (local)
+sentence-transformers>=3.0.0
+
+# Vector store
+chromadb>=0.5.0
+
+# Sparse retrieval
+rank-bm25>=0.2.2
+
+# PDF parsing
+PyMuPDF>=1.24.0
+
+# PPTX parsing
+python-pptx>=1.0.0
+
+# Token counting for chunking
+tiktoken>=0.7.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Numeric
+numpy>=1.26.0
