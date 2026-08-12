@@ -122,13 +122,15 @@ def render_quizzes_tab():
     with st.form("quiz_form"):
         for i, q in enumerate(questions):
             st.markdown(f"**Q{i+1}. {q['question']}**")
+
             options = q.get("options", [])
-            answer = st.radio(
+            st.radio(
                 f"Q{i+1}",
-                options=options,
+                options=["Select an answer"] + options,
                 key=f"quiz_q_{i}",
                 label_visibility="collapsed",
             )
+
             st.caption(f"Source: p.{q.get('source_page', '?')}")
             st.markdown("---")
 
@@ -136,17 +138,33 @@ def render_quizzes_tab():
 
     if submitted:
         score = 0
+
         for i, q in enumerate(questions):
             user_choice = st.session_state.get(f"quiz_q_{i}", "")
             correct = q.get("correct_answer", "")
-            # Match by letter prefix
-            is_correct = user_choice.startswith(correct) if user_choice else False
+
+            is_correct = (
+                user_choice != "Select an answer"
+                and user_choice.startswith(correct)
+            )
+
+            display_answer = (
+                user_choice
+                if user_choice != "Select an answer"
+                else "Not answered"
+            )
+
             if is_correct:
                 score += 1
-            with st.expander(f"Q{i+1}: {'✅' if is_correct else '❌'} {q['question']}"):
-                st.markdown(f"**Your answer:** {user_choice}")
+
+            with st.expander(
+                f"Q{i+1}: {'✅' if is_correct else '❌'} {q['question']}"
+            ):
+                st.markdown(f"**Your answer:** {display_answer}")
                 st.markdown(f"**Correct answer:** {correct}")
-                st.markdown(f"**Explanation:** {q.get('explanation', 'N/A')}")
+                st.markdown(
+                    f"**Explanation:** {q.get('explanation', 'N/A')}"
+                )
 
         accuracy = score / len(questions)
         st.success(f"**Score: {score}/{len(questions)} ({accuracy*100:.0f}%)**")

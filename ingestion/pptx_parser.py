@@ -5,14 +5,11 @@ Treats each slide as one "page", extracts text from all text frames.
 
 from __future__ import annotations
 
-import io
 import logging
 from pathlib import Path
-
 from pptx import Presentation
-from pptx.util import Inches
-
 from ingestion.pdf_parser import PageContent
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +47,7 @@ def parse_pptx(file_path: str | Path) -> list[PageContent]:
         # ── Images ────────────────────────────────────────────────────────────
         raw_images: list[bytes] = []
         for shape in slide.shapes:
-            if shape.shape_type == 13:  # MSO_SHAPE_TYPE.PICTURE
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 try:
                     image = shape.image
                     raw_images.append(image.blob)

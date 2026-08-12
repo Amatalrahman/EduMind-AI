@@ -6,12 +6,9 @@ Returns a list of page dicts so the chunker can process them page-by-page.
 
 from __future__ import annotations
 
-import io
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
-
 import pymupdf as fitz  # PyMuPDF (pymupdf >= 1.24 canonical import)
 
 logger = logging.getLogger(__name__)
@@ -54,8 +51,6 @@ def parse_pdf(file_path: str | Path) -> list[PageContent]:
         for img_info in image_list:
             xref = img_info[0]
             try:
-                base_image = doc.extract_image(xref)
-                img_bytes = base_image["image"]
                 # Convert to PNG for consistency
                 pix = fitz.Pixmap(doc, xref)
                 if pix.n > 4:  # CMYK or other – convert to RGB
