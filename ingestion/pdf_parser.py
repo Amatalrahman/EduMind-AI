@@ -10,6 +10,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 import pymupdf as fitz  # PyMuPDF (pymupdf >= 1.24 canonical import)
+from ingestion.text_cleaner import clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def parse_pdf(file_path: str | Path) -> list[PageContent]:
 
         # ── Text ──────────────────────────────────────────────────────────────
         text = page.get_text("text")  # plain text extraction
-        text = text.strip()
+        text = clean_text(text)
 
         # ── Images ────────────────────────────────────────────────────────────
         raw_images: list[bytes] = []
