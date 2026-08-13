@@ -13,7 +13,6 @@ from db.database import (
     get_all_subjects,
     get_documents_by_subject,
     insert_quiz_result,
-    upsert_study_log,
 )
 from retrieval.hybrid_retriever import retrieve
 from llm import groq_client
@@ -113,7 +112,6 @@ def render_quizzes_tab():
         st.session_state["quiz_answers"] = {}
         st.session_state["quiz_submitted"] = False
         st.session_state["quiz_subject_id"] = subject_id
-        st.session_state["saved_quiz_topic"] = query
 
     # ── Display quiz ───────────────────────────────────────────────────────────
     questions = st.session_state.get("quiz_questions", [])
@@ -161,10 +159,3 @@ def render_quizzes_tab():
             score=score,
             total=len(questions),
         )
-        topic = st.session_state.get("saved_quiz_topic", query)
-        upsert_study_log(
-            subject_id=st.session_state.get("quiz_subject_id", subject_id),
-            topic=topic,
-            quiz_accuracy=accuracy,
-        )
-        st.info("Results saved to your study log.")

@@ -38,7 +38,6 @@ from ui.tab_chat import render_chat_tab
 from ui.tab_summaries import render_summaries_tab
 from ui.tab_quizzes import render_quizzes_tab
 from ui.tab_flashcards import render_flashcards_tab
-from ui.tab_study_plan import render_study_plan_tab
 from ui.reverse_teaching import render_reverse_teaching_tab
 
 # ── Styles ────────────────────────────────────────────────────────────────────
@@ -54,22 +53,22 @@ def navigate(page: str):
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("# 🧠 EduMind")
+    st.image("assets/logo.png", use_container_width=True)
     st.markdown(
         "Your personal AI-powered study companion. "
         "Upload lectures, ask questions, generate quizzes, and track your progress."
     )
     if st.session_state.current_page != "Home":
-        if st.button("🏠 Home Dashboard", use_container_width=True):
+        if st.button("Home Dashboard", use_container_width=True):
             st.session_state.current_page = "Home"
             st.rerun()
 
     st.divider()
     st.markdown("**Powered by**")
-    st.markdown("- 🤖 Gemini 2.0 Flash (Q&A + Vision)")
-    st.markdown("- ⚡ Groq LLaMA 3.3 70B (Quizzes)")
-    st.markdown("- 🔍 BAAI/bge-m3 (Embeddings)")
-    st.markdown("- 🗄️ ChromaDB + BM25 (Hybrid RAG)")
+    st.markdown("🐾 Gemini 2.0 Flash (Q&A + Vision)")
+    st.markdown("🐾 Groq LLaMA 3.3 70B (Quizzes)")
+    st.markdown("🐾 BAAI/bge-m3 (Embeddings)")
+    st.markdown("🐾 ChromaDB + BM25 (Hybrid RAG)")
     st.divider()
     st.caption("All data stored locally. No cloud required.")
 
@@ -81,12 +80,11 @@ if st.session_state.current_page == "Home":
     st.write("")
 
     features = [
-        {"id": "upload", "title": "Upload", "desc": "Add new lectures", "icon": "upload.jpg"},
+        {"id": "upload", "title": "Upload", "desc": "Add new lectures", "icon": "upload.png"},
         {"id": "chat", "title": "Chat Q&A", "desc": "Ask your notes", "icon": "chat.png"},
-        {"id": "summaries", "title": "Summaries", "desc": "Quick digests", "icon": "summarization.jpg"},
-        {"id": "quizzes", "title": "Quizzes", "desc": "Test yourself", "icon": "quizzes.jpg"},
+        {"id": "summaries", "title": "Summaries", "desc": "Quick digests", "icon": "summarization.png"},
+        {"id": "quizzes", "title": "Quizzes", "desc": "Test yourself", "icon": "quizzes.png"},
         {"id": "flashcards", "title": "Flashcards", "desc": "Spaced repetition", "icon": "flash_cards.png"},
-        {"id": "plan", "title": "Study Plan", "desc": "Your schedule", "icon": "plan.png"},
         {"id": "explain", "title": "Explain to Me", "desc": "Reverse teaching", "icon": "explain.png"},
     ]
 
@@ -113,20 +111,6 @@ if st.session_state.current_page == "Home":
                         st.button("Open", key=feature["id"], use_container_width=True, on_click=navigate, args=(feature["id"],))
         st.write("")
 
-    # Center the last item (Explain to Me)
-    _, c2, _ = st.columns([1, 1, 1])
-    with c2:
-        feature = features[6]
-        with st.container(border=True):
-            img_path = cards_dir / feature["icon"]
-            if img_path.exists():
-                st.image(str(img_path), use_container_width=True)
-            else:
-                st.write(f"*(Missing {feature['icon']})*")
-            st.markdown(f"<h3 style='text-align: center; margin-bottom: 5px;'>{feature['title']}</h3>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align: center; color: #666; font-size: 0.9em; margin-bottom: 15px;'>{feature['desc']}</p>", unsafe_allow_html=True)
-            st.button("Open", key=feature["id"], use_container_width=True, on_click=navigate, args=(feature["id"],))
-
 else:
     # Subpage view
     if st.button("⬅️ Back to Dashboard"):
@@ -145,7 +129,5 @@ else:
         render_quizzes_tab()
     elif page == "flashcards":
         render_flashcards_tab()
-    elif page == "plan":
-        render_study_plan_tab()
     elif page == "explain":
         render_reverse_teaching_tab()

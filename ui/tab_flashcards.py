@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import logging
-import random
 
 import streamlit as st
 
@@ -15,7 +14,6 @@ from db.database import (
     get_documents_by_subject,
     insert_flashcard,
     get_flashcards_by_subject,
-    upsert_study_log,
 )
 from retrieval.hybrid_retriever import retrieve
 from llm import groq_client

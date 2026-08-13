@@ -85,15 +85,6 @@ CREATE TABLE IF NOT EXISTS flashcards (
     source_page INTEGER
 );
 
-CREATE TABLE IF NOT EXISTS study_log (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject_id     INTEGER NOT NULL REFERENCES subjects(id),
-    topic          TEXT    NOT NULL,
-    times_reviewed INTEGER NOT NULL DEFAULT 0,
-    quiz_accuracy  REAL    NOT NULL DEFAULT 0.0,
-    last_seen      TEXT    NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(subject_id, topic)
-);
 """
 
 
@@ -267,31 +258,6 @@ def get_flashcards_by_subject(subject_id: int) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             "SELECT * FROM flashcards WHERE subject_id = ? ORDER BY id DESC",
-            (subject_id,),
-        ).fetchall()
-        return [dict(r) for r in rows]
-
-
-# ── Study log (long-term memory) ───────────────────────────────────────────────
-
-def upsert_study_log(subject_id: int, topic: str, quiz_accuracy: float) -> None:
-    with get_conn() as conn:
-        conn.execute(
-            """INSERT INTO study_log (subject_id, topic, times_reviewed, quiz_accuracy, last_seen)
-               VALUES (?, ?, 1, ?, datetime('now'))
-               ON CONFLICT(subject_id, topic) DO UPDATE SET
-                   times_reviewed = times_reviewed + 1,
-                   quiz_accuracy  = (quiz_accuracy * times_reviewed + excluded.quiz_accuracy)
-                                    / (times_reviewed + 1),
-                   last_seen      = datetime('now')""",
-            (subject_id, topic, quiz_accuracy),
-        )
-
-
-def get_study_log_by_subject(subject_id: int) -> list[dict]:
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT * FROM study_log WHERE subject_id = ? ORDER BY quiz_accuracy ASC, last_seen ASC",
             (subject_id,),
         ).fetchall()
         return [dict(r) for r in rows]

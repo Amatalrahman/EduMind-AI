@@ -2,7 +2,7 @@
 Reverse-Teaching Challenge tab.
 The AI pretends to know nothing and asks the student to explain a topic.
 It scores each explanation (0-100), surfaces knowledge gaps, and asks a follow-up.
-After 3 rounds the final average score is saved to study_log.
+After 3 rounds the final average score is shown as a summary.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from db.database import get_all_subjects, upsert_study_log
+from db.database import get_all_subjects
 from retrieval.hybrid_retriever import retrieve
 from llm.gemini_client import generate_text
 
@@ -358,14 +358,6 @@ def render_reverse_teaching_tab():
 
         st.markdown(f"### Final Average Score: **{avg:.0f} / 100**")
         st.progress(avg / 100)
-
-        # Save to study_log
-        upsert_study_log(
-            subject_id=subject_id,
-            topic=topic,
-            quiz_accuracy=avg / 100,
-        )
-        st.success("✅ Score saved to your Study Plan!")
         return
 
     # ── Input box for student's explanation ───────────────────────────────────
