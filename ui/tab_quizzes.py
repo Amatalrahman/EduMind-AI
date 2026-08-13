@@ -153,6 +153,7 @@ def render_quizzes_tab():
                 if user_choice != "Select an answer"
                 else "Not answered"
             )
+
             if is_correct:
                 score += 1
             with st.expander(f"Q{i+1}: {'✅' if is_correct else '❌'} {q['question']}"):
