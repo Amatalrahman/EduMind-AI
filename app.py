@@ -66,7 +66,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Powered by**")
-    st.markdown("- 🤖 Gemini 2.0 Flash (Q&A + Vision)")
+    st.markdown("- 🤖 Gemini 3.6 Flash (Q&A + Vision)")
     st.markdown("- ⚡ Groq LLaMA 3.3 70B (Quizzes)")
     st.markdown("- 🔍 BAAI/bge-m3 (Embeddings)")
     st.markdown("- 🗄️ ChromaDB + BM25 (Hybrid RAG)")
