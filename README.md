@@ -20,21 +20,34 @@
 
 <p align="center">
   <sub>Final graduation project — <b>NTI (National Telecommunication Institute)</b> AI internship program</sub>
-    <img width="960" height="464" alt="image" src="https://github.com/user-attachments/assets/a96d8313-3972-4580-b0cb-d46071da5d44" />
+  <img width="960" height="464" alt="image" src="https://github.com/user-attachments/assets/08bf86e1-550f-49d0-ac70-7b4ac3fc6a44" />
+
 </p>
 
 <p align="center">
-  <b>Document Ingestion</b> &nbsp;·&nbsp;
-  <b>Grounded Chat Q&A</b> &nbsp;·&nbsp;
-  <b>Smart Summaries</b> &nbsp;·&nbsp;
-  <b>Auto-Generated Quizzes</b> &nbsp;·&nbsp;
-  <b>Flashcards</b> &nbsp;·&nbsp;
-  <b>Explain It to Me</b>
+  <b>📄 Document Ingestion</b> &nbsp;·&nbsp;
+  <b>💬 Grounded Chat Q&A</b> &nbsp;·&nbsp;
+  <b>📝 Smart Summaries</b> &nbsp;·&nbsp;
+  <b>🧠 Auto-Generated Quizzes</b> &nbsp;·&nbsp;
+  <b>🃏 Flashcards</b> &nbsp;·&nbsp;
+  <b>🎓 Explain It to Me</b>
 </p>
 
 ---
 
-## What EduMind Does
+## 🎥 Demo
+
+<p align="center">
+  <img src="assets/demo.gif" alt="EduMind demo" width="800"/>
+</p>
+
+<p align="center">
+  <sub>Replace <code>assets/demo.gif</code> with a screen recording or GIF of the app in action.</sub>
+</p>
+
+---
+
+## 🚀 What EduMind Does
 
 EduMind is a local-first, retrieval-augmented study assistant. Instead of chatting with a
 generic model, every answer, quiz question, summary, and flashcard is generated from the
@@ -43,68 +56,68 @@ answer came from.
 
 ---
 
-## Features
+## ✨ Features
 
-### Document Ingestion
+### 📄 Document Ingestion
 Drop in PDFs and PowerPoint decks. Text is extracted page by page, chunked, embedded, and
 indexed automatically — no manual setup, no separate pipeline to run.
 
-### Chat Q&A
+### 💬 Chat Q&A
 Ask natural-language questions and get answers grounded strictly in your own notes.
 Every claim is cited inline with the exact lecture and page number it came from.
 
-### Summaries
+### 📝 Summaries
 Turn a dense chapter or an entire slide deck into a clear, structured summary — headings,
 bullet points, and the key concepts pulled out for you.
 
-### Quizzes
+### 🧠 Quizzes
 Auto-generated multiple-choice quizzes built from your material, complete with
 explanations for every answer and instant scoring.
 
-### Flashcards
+### 🃏 Flashcards
 AI-generated question-and-answer flashcards with a fast, distraction-free flip-to-review
 interface — built for repetition, not clutter.
 
-### Explain It to Me
+### 🎓 Explain It to Me
 The standout feature. The AI plays a curious beginner and asks you to teach it a topic.
 Your explanation gets scored across four dimensions — accuracy, completeness, clarity,
 and depth — with a follow-up question that targets exactly what you missed.
 
 ---
 
-## Why It's Different
+## 🌟 Why It's Different
 
-- **Grounded, not generic.** Every generated artifact — chat answer, quiz, flashcard, or
+- **🎯 Grounded, not generic.** Every generated artifact — chat answer, quiz, flashcard, or
   summary — is built from a hybrid retrieval pipeline over your own documents, not the
   model's general knowledge, and the system prompt explicitly forbids answering outside
   the retrieved context.
-- **Hybrid retrieval done right.** Dense vector search and sparse keyword search are fused
+- **🔀 Hybrid retrieval done right.** Dense vector search and sparse keyword search are fused
   with Reciprocal Rank Fusion, so both semantic meaning and exact terminology get
   surfaced — a single method alone would miss one or the other.
-- **Learning science built in.** "Explain It to Me" flips the usual Q&A model — active
+- **🧩 Learning science built in.** "Explain It to Me" flips the usual Q&A model — active
   recall and self-explanation are consistently shown to build deeper retention than
   passive review.
-- **Fast where it counts.** Groq's LLaMA 3.3 70B handles latency-sensitive generation
+- **⚡ Fast where it counts.** Groq's LLaMA 3.3 70B handles latency-sensitive generation
   (quizzes, flashcards) while Gemini handles the reasoning-heavy Q&A and summarization
   work.
-- **Your data stays yours.** Documents, embeddings, and progress are stored locally in
+- **🔒 Your data stays yours.** Documents, embeddings, and progress are stored locally in
   SQLite and ChromaDB. Nothing leaves your machine beyond the LLM API calls you
   configure.
 
 ---
 
-## How It Works
+## ⚙️ How It Works
 
 This is the actual pipeline running under the hood, end to end.
 
-### 1. Ingestion
+### 1️⃣ Ingestion
 
 `ingestion/pdf_parser.py` and `ingestion/pptx_parser.py` open the uploaded file and walk
 it page by page (or slide by slide), pulling out the raw text of each page separately.
 Page boundaries are preserved deliberately — this is what later lets every citation point
 to an exact page number instead of a vague "somewhere in this file."
 
-### 2. Chunking
+### 2️⃣ Chunking
 
 Handled by `ingestion/chunker.py`. Large pages of lecture text can't be fed to an LLM or
 embedding model as-is, so each page is split into overlapping chunks using `tiktoken`:
@@ -120,14 +133,14 @@ embedding model as-is, so each page is split into overlapping chunks using `tikt
 - Each chunk keeps a `page_number` and a document-wide `chunk_index`, so it can always be
   traced back to its exact origin.
 
-### 3. Embedding
+### 3️⃣ Embedding
 
 `indexing/embedder.py` turns each chunk's text into a dense vector using a local
 Sentence-Transformers model (no external API call, so this step is free and private).
 Embeddings are L2-normalized, which makes cosine similarity search — used later by
 ChromaDB — a simple dot product.
 
-### 4. Indexing
+### 4️⃣ Indexing
 
 Every chunk is written to two parallel indexes, one per subject:
 
@@ -138,7 +151,7 @@ Every chunk is written to two parallel indexes, one per subject:
   `rank_bm25`, rebuilt per subject after every upload and pickled to disk. This is what
   catches exact terms, acronyms, and formulas that a purely semantic search can miss.
 
-### 5. Hybrid Retrieval
+### 5️⃣ Hybrid Retrieval
 
 When you ask a question, generate a quiz, or request a flashcard, `retrieval/hybrid_retriever.py`
 runs both searches and fuses them with **Reciprocal Rank Fusion** (`retrieval/rrf.py`):
@@ -153,7 +166,7 @@ that rank highly in *both* lists rise to the top; chunks that only one method fo
 get a fair chance instead of being discarded. The top-scoring chunks are then enriched
 with their source metadata from SQLite and returned.
 
-### 6. Generation
+### 6️⃣ Generation
 
 `rag/qa_chain.py` builds the final prompt: retrieved chunks are formatted with explicit
 `[Lecture: filename, p.X]` labels, and the system prompt instructs Gemini to answer
@@ -165,7 +178,7 @@ retrieve-then-generate pattern, but hand the context to Groq's LLaMA 3.3 70B ins
 chosen for its low latency, since generating a multi-question quiz needs to feel
 near-instant.
 
-### 7. Explain It to Me
+### 7️⃣ Explain It to Me
 
 `ui/reverse_teaching.py` inverts the usual flow: Gemini asks a beginner-level question
 about the topic (grounded in the same retrieved context), you type an explanation in your
@@ -175,7 +188,7 @@ recall instead of passive re-reading, which research consistently shows retains 
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
                  ┌────────────────┐
@@ -207,7 +220,7 @@ recall instead of passive re-reading, which research consistently shows retains 
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology | Role |
 |---|---|---|
@@ -223,7 +236,7 @@ recall instead of passive re-reading, which research consistently shows retains 
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 study_assistant/
@@ -241,15 +254,15 @@ study_assistant/
 
 ---
 
-## Getting Started
+## 🏁 Getting Started
 
-### Prerequisites
+### ✅ Prerequisites
 
 - Python 3.10 or later
 - A [Gemini API key](https://aistudio.google.com/app/apikey)
 - A [Groq API key](https://console.groq.com/keys)
 
-### Installation
+### 📦 Installation
 
 ```bash
 git clone <repository-url>
@@ -257,7 +270,7 @@ cd study_assistant
 pip install -r requirements.txt
 ```
 
-### Configuration
+### 🔑 Configuration
 
 ```bash
 cp .env.example .env
@@ -270,7 +283,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
-### Run
+### ▶️ Run
 
 ```bash
 streamlit run app.py
@@ -281,22 +294,22 @@ started — every other tab pulls from what you've indexed.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
-- Spaced-repetition scheduling that ties quiz, flashcard, and explanation performance
+- 📅 Spaced-repetition scheduling that ties quiz, flashcard, and explanation performance
   together into a single review plan
-- Multi-document cross-referencing for broader Q&A
-- Export of quizzes and flashcards to shareable formats
+- 🔗 Multi-document cross-referencing for broader Q&A
+- 📤 Export of quizzes and flashcards to shareable formats
 
 ---
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 Built as a graduation project for the **NTI (National Telecommunication Institute)**
 AI/ML internship track.
 
 ---
 
-## License
+## 📜 License
 
 Add your license of choice here.
