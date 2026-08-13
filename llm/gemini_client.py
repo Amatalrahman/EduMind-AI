@@ -12,26 +12,18 @@ from google import genai
 from google.genai import types
 
 from config import (
-    GEMINI_API_KEY,
+    GEMINI_API_KEYS,
     GEMINI_TEXT_MODEL,
     GEMINI_VISION_MODEL,
     MAX_OUTPUT_TOKENS,
     TEMPERATURE,
 )
+from llm import QuotaExhaustedError
 
 logger = logging.getLogger(__name__)
 
-# Instantiate a single client reused across calls
-_client: Optional[genai.Client] = None
 
 
-def _get_client() -> genai.Client:
-    global _client
-    if _client is None:
-        if not GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY is not set. Please add it to your .env file.")
-        _client = genai.Client(api_key=GEMINI_API_KEY)
-    return _client
 
 
 def _generation_config(
@@ -64,9 +56,10 @@ def generate_text(
     Returns:
         Generated text string.
     """
-    client = _get_client()
-    config = _generation_config(max_tokens, temperature)
+    if not GEMINI_API_KEYS:
+        raise ValueError("GEMINI_API_KEYS is empty. Please add keys to your .env file.")
 
+    config = _generation_config(max_tokens, temperature)
     if system_instruction:
         config.system_instruction = system_instruction
 
@@ -77,15 +70,29 @@ def generate_text(
             role = turn.get("role", "user")
             parts = turn.get("parts", [""])
             contents.append(types.Content(role=role, parts=[types.Part(text=p) for p in parts]))
-
     contents.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
 
-    response = client.models.generate_content(
-        model=GEMINI_TEXT_MODEL,
-        contents=contents,
-        config=config,
-    )
-    return response.text
+    last_err = None
+    for api_key in GEMINI_API_KEYS:
+        client = genai.Client(api_key=api_key)
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_TEXT_MODEL,
+                contents=contents,
+                config=config,
+            )
+            return response.text
+        except Exception as exc:
+            err_msg = str(exc).lower()
+            if "429" in err_msg or "quota" in err_msg or "exhausted" in err_msg or "rate limit" in err_msg:
+                logger.warning(f"Gemini API key {api_key[:10]}... exhausted/failed: {exc}. Trying next...")
+                last_err = exc
+                continue
+            else:
+                # Re-raise if it's not a quota/rate limit error (e.g. invalid request)
+                raise
+                
+    raise QuotaExhaustedError("All Gemini API keys have exhausted their quota or failed.") from last_err
 
 
 def generate_with_image(
@@ -106,7 +113,8 @@ def generate_with_image(
     Returns:
         Generated description text.
     """
-    client = _get_client()
+    if not GEMINI_API_KEYS:
+        raise ValueError("GEMINI_API_KEYS is empty. Please add keys to your .env file.")
 
     config = _generation_config()
     if system_instruction:
@@ -119,9 +127,23 @@ def generate_with_image(
         ])
     ]
 
-    response = client.models.generate_content(
-        model=GEMINI_VISION_MODEL,
-        contents=contents,
-        config=config,
-    )
-    return response.text
+    last_err = None
+    for api_key in GEMINI_API_KEYS:
+        client = genai.Client(api_key=api_key)
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_VISION_MODEL,
+                contents=contents,
+                config=config,
+            )
+            return response.text
+        except Exception as exc:
+            err_msg = str(exc).lower()
+            if "429" in err_msg or "quota" in err_msg or "exhausted" in err_msg or "rate limit" in err_msg:
+                logger.warning(f"Gemini API key {api_key[:10]}... exhausted/failed: {exc}. Trying next...")
+                last_err = exc
+                continue
+            else:
+                raise
+                
+    raise QuotaExhaustedError("All Gemini API keys have exhausted their quota or failed.") from last_err

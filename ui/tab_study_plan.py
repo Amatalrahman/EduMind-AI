@@ -43,6 +43,14 @@ def _days_overdue(next_review: datetime) -> int:
     return max(0, delta)
 
 
+def select_for_review(topic: str):
+    """Callback to pre-fill the topic across all study modes."""
+    st.session_state["quiz_topic"] = topic
+    st.session_state["fc_topic"] = topic
+    st.session_state["rt_topic_input"] = topic
+    st.toast(f"Topic '{topic}' loaded! Switch to Quizzes, Flashcards, or Explain tabs to start.", icon="🚀")
+
+
 def render_study_plan_tab():
     st.header("📅 Study Plan")
     st.caption(
@@ -68,50 +76,118 @@ def render_study_plan_tab():
         )
         return
 
-    st.subheader(f"Review Schedule — {selected_name}")
+    # Tabs inside the Study Plan
+    tab_cal, tab_list, tab_stats = st.tabs(["📆 7-Day Calendar", "📋 Full List", "📊 Performance"])
 
     now = datetime.now()
+    today = now.date()
+
+    # Pre-calculate review dates
+    entries_with_dates = []
     for entry in log:
-        next_review = _sm2_next_review(
+        next_review_dt = _sm2_next_review(
             times_reviewed=entry["times_reviewed"],
             quiz_accuracy=entry["quiz_accuracy"],
             last_seen_str=entry["last_seen"],
         )
-        days_over = _days_overdue(next_review)
-        accuracy_pct = entry["quiz_accuracy"] * 100
+        # If overdue, group it onto Today
+        review_date = next_review_dt.date()
+        if review_date < today:
+            review_date = today
+        entries_with_dates.append({**entry, "next_review_dt": next_review_dt, "review_date": review_date})
 
-        if days_over > 0:
-            urgency = "🔴"
-            label = f"**OVERDUE by {days_over} day(s)**"
-        elif (next_review - now).days <= 1:
-            urgency = "🟡"
-            label = "**Due today or tomorrow**"
-        else:
-            urgency = "🟢"
-            label = f"Next review: {next_review.strftime('%Y-%m-%d')}"
+    # ── 1. Calendar View ────────────────────────────────────────────────────────
+    with tab_cal:
+        st.subheader("🗓️ Up Next (7 Days)")
+        
+        # Group by date
+        from collections import defaultdict
+        scheduled = defaultdict(list)
+        for e in entries_with_dates:
+            scheduled[e["review_date"]].append(e)
 
-        with st.container(border=True):
-            col1, col2, col3 = st.columns([4, 2, 2])
-            col1.markdown(f"{urgency} **{entry['topic']}**")
-            col2.metric("Quiz accuracy", f"{accuracy_pct:.0f}%")
-            col3.metric("Reviews done", entry["times_reviewed"])
-            st.caption(
-                f"{label} | Last reviewed: {entry['last_seen'][:10]} | "
-                f"Reviewed {entry['times_reviewed']}x"
+        days = [today + timedelta(days=i) for i in range(7)]
+        cols = st.columns(7)
+
+        for i, day in enumerate(days):
+            with cols[i]:
+                # Day header
+                if i == 0:
+                    st.markdown("**Today**")
+                elif i == 1:
+                    st.markdown("**Tomorrow**")
+                else:
+                    st.markdown(f"**{day.strftime('%a')}**<br>{day.strftime('%m/%d')}", unsafe_allow_html=True)
+                
+                st.divider()
+                
+                topics = scheduled.get(day, [])
+                if not topics:
+                    st.caption("No reviews")
+                else:
+                    for t in topics:
+                        with st.container(border=True):
+                            st.write(f"**{t['topic']}**")
+                            # Color dot based on accuracy
+                            acc = t['quiz_accuracy']
+                            dot = "🔴" if acc < 0.5 else "🟡" if acc < 0.8 else "🟢"
+                            st.caption(f"{dot} {acc*100:.0f}% acc")
+                            st.button(
+                                "Study",
+                                key=f"study_{t['id']}_{day}",
+                                on_click=select_for_review,
+                                args=(t['topic'],),
+                                use_container_width=True,
+                            )
+
+    # ── 2. Full List View ───────────────────────────────────────────────────────
+    with tab_list:
+        st.subheader("Review Schedule (All)")
+        for entry in entries_with_dates:
+            next_review_dt = entry["next_review_dt"]
+            days_over = _days_overdue(next_review_dt)
+            accuracy_pct = entry["quiz_accuracy"] * 100
+
+            if days_over > 0:
+                urgency = "🔴"
+                label = f"**OVERDUE by {days_over} day(s)**"
+            elif (next_review_dt - now).days <= 1:
+                urgency = "🟡"
+                label = "**Due today or tomorrow**"
+            else:
+                urgency = "🟢"
+                label = f"Next review: {next_review_dt.strftime('%Y-%m-%d')}"
+
+            with st.container(border=True):
+                col1, col2, col3, col4 = st.columns([4, 2, 2, 2])
+                col1.markdown(f"{urgency} **{entry['topic']}**")
+                col2.metric("Quiz accuracy", f"{accuracy_pct:.0f}%")
+                col3.metric("Reviews done", entry["times_reviewed"])
+                with col4:
+                    st.button(
+                        "Study Now",
+                        key=f"list_study_{entry['id']}",
+                        on_click=select_for_review,
+                        args=(entry['topic'],),
+                        use_container_width=True,
+                    )
+                st.caption(
+                    f"{label} | Last reviewed: {entry['last_seen'][:10]}"
+                )
+
+    # ── 3. Performance Stats ────────────────────────────────────────────────────
+    with tab_stats:
+        st.subheader("📊 Overview")
+        if log:
+            import pandas as pd
+            df = pd.DataFrame(log)
+            df["quiz_accuracy_pct"] = (df["quiz_accuracy"] * 100).round(1)
+            df = df[["topic", "quiz_accuracy_pct", "times_reviewed", "last_seen"]].rename(
+                columns={
+                    "topic": "Topic",
+                    "quiz_accuracy_pct": "Accuracy (%)",
+                    "times_reviewed": "Reviews",
+                    "last_seen": "Last Seen",
+                }
             )
-
-    st.divider()
-    st.subheader("📊 Performance Overview")
-    if log:
-        import pandas as pd
-        df = pd.DataFrame(log)
-        df["quiz_accuracy_pct"] = (df["quiz_accuracy"] * 100).round(1)
-        df = df[["topic", "quiz_accuracy_pct", "times_reviewed", "last_seen"]].rename(
-            columns={
-                "topic": "Topic",
-                "quiz_accuracy_pct": "Accuracy (%)",
-                "times_reviewed": "Reviews",
-                "last_seen": "Last Seen",
-            }
-        )
-        st.dataframe(df, use_container_width=True, hide_index=True)
+            st.dataframe(df, use_container_width=True, hide_index=True)

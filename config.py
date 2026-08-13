@@ -22,8 +22,12 @@ for _d in [DATA_DIR, UPLOADS_DIR, CHROMA_DIR, BM25_DIR]:
     _d.mkdir(parents=True, exist_ok=True)
 
 # ── API Keys ───────────────────────────────────────────────────────────────────
-GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+# Support multiple keys for round-robin / fallback
+_gemini_keys_str = os.getenv("GEMINI_API_KEYS", os.getenv("GEMINI_API_KEY", ""))
+GEMINI_API_KEYS: list[str] = [k.strip() for k in _gemini_keys_str.split(",") if k.strip()]
+
+_groq_keys_str = os.getenv("GROQ_API_KEYS", os.getenv("GROQ_API_KEY", ""))
+GROQ_API_KEYS: list[str] = [k.strip() for k in _groq_keys_str.split(",") if k.strip()]
 
 # ── Model Names ────────────────────────────────────────────────────────────────
 GEMINI_TEXT_MODEL = "gemini-3.6-flash"

@@ -52,18 +52,23 @@ def _generate_flashcards(subject_id: int, query: str, n: int) -> list[dict]:
     context = "\n\n".join(
         f"[{c.filename}, p.{c.page_number}]\n{c.text}" for c in chunks
     )
-    raw = groq_client.generate_text(
-        prompt=FLASHCARD_PROMPT.format(n=n, context=context),
-        system_prompt=FLASHCARD_SYSTEM,
-        max_tokens=2048,
-        temperature=0.3,
-        json_mode=True,
-    )
     try:
+        from llm import QuotaExhaustedError
+        raw = groq_client.generate_text(
+            prompt=FLASHCARD_PROMPT.format(n=n, context=context),
+            system_prompt=FLASHCARD_SYSTEM,
+            max_tokens=2048,
+            temperature=0.3,
+            json_mode=True,
+        )
         data = json.loads(raw)
         return data.get("flashcards", [])
+    except QuotaExhaustedError as exc:
+        st.error(f"API Quota Exhausted: {exc}\n\nPlease try again later. Other non-AI features remain available.")
+        return []
     except Exception as exc:
-        logger.error("Flashcard JSON parse error: %s\n%s", exc, raw)
+        logger.error("Flashcard JSON parse error: %s", exc)
+        st.error(f"Failed to parse flashcard JSON: {exc}")
         return []
 
 

@@ -74,11 +74,17 @@ def render_chat_tab():
         # Generate answer
         with st.chat_message("assistant"):
             with st.spinner("Searching your lectures…"):
-                result = answer_question(
-                    question=question,
-                    subject_id=subject_id,
-                    chat_history=history,
-                )
+                try:
+                    from llm import QuotaExhaustedError
+                    result = answer_question(
+                        question=question,
+                        subject_id=subject_id,
+                        chat_history=history,
+                    )
+                except QuotaExhaustedError as exc:
+                    st.error(f"API Quota Exhausted: {exc}\n\nPlease try again later. Other non-AI features remain available.")
+                    st.stop()
+                    
             st.markdown(result.answer)
 
             # Sources panel
@@ -92,3 +98,4 @@ def render_chat_tab():
 
         _add_to_history("assistant", result.answer)
         st.rerun()
+

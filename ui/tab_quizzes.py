@@ -55,18 +55,22 @@ def _generate_quiz(subject_id: int, query: str, n_questions: int) -> list[dict]:
         f"[{c.filename}, p.{c.page_number}]\n{c.text}" for c in chunks
     )
 
-    raw = groq_client.generate_text(
-        prompt=QUIZ_PROMPT.format(n=n_questions, context=context),
-        system_prompt=QUIZ_SYSTEM,
-        max_tokens=2048,
-        temperature=0.4,
-        json_mode=True,
-    )
     try:
+        from llm import QuotaExhaustedError
+        raw = groq_client.generate_text(
+            prompt=QUIZ_PROMPT.format(n=n_questions, context=context),
+            system_prompt=QUIZ_SYSTEM,
+            max_tokens=2048,
+            temperature=0.4,
+            json_mode=True,
+        )
         data = json.loads(raw)
         return data.get("questions", [])
+    except QuotaExhaustedError as exc:
+        st.error(f"API Quota Exhausted: {exc}\n\nPlease try again later. Other non-AI features remain available.")
+        return []
     except Exception as exc:
-        logger.error("Quiz JSON parse error: %s\n%s", exc, raw)
+        logger.error("Quiz JSON parse error: %s", exc)
         st.error(f"Failed to parse quiz JSON: {exc}")
         return []
 
@@ -122,15 +126,13 @@ def render_quizzes_tab():
     with st.form("quiz_form"):
         for i, q in enumerate(questions):
             st.markdown(f"**Q{i+1}. {q['question']}**")
-
             options = q.get("options", [])
-            st.radio(
+            answer = st.radio(
                 f"Q{i+1}",
-                options=["Select an answer"] + options,
+                options=options,
                 key=f"quiz_q_{i}",
                 label_visibility="collapsed",
             )
-
             st.caption(f"Source: p.{q.get('source_page', '?')}")
             st.markdown("---")
 
@@ -138,33 +140,17 @@ def render_quizzes_tab():
 
     if submitted:
         score = 0
-
         for i, q in enumerate(questions):
             user_choice = st.session_state.get(f"quiz_q_{i}", "")
             correct = q.get("correct_answer", "")
-
-            is_correct = (
-                user_choice != "Select an answer"
-                and user_choice.startswith(correct)
-            )
-
-            display_answer = (
-                user_choice
-                if user_choice != "Select an answer"
-                else "Not answered"
-            )
-
+            # Match by letter prefix
+            is_correct = user_choice.startswith(correct) if user_choice else False
             if is_correct:
                 score += 1
-
-            with st.expander(
-                f"Q{i+1}: {'✅' if is_correct else '❌'} {q['question']}"
-            ):
-                st.markdown(f"**Your answer:** {display_answer}")
+            with st.expander(f"Q{i+1}: {'✅' if is_correct else '❌'} {q['question']}"):
+                st.markdown(f"**Your answer:** {user_choice}")
                 st.markdown(f"**Correct answer:** {correct}")
-                st.markdown(
-                    f"**Explanation:** {q.get('explanation', 'N/A')}"
-                )
+                st.markdown(f"**Explanation:** {q.get('explanation', 'N/A')}")
 
         accuracy = score / len(questions)
         st.success(f"**Score: {score}/{len(questions)} ({accuracy*100:.0f}%)**")

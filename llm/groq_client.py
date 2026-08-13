@@ -11,15 +11,10 @@ from typing import Optional
 
 from groq import Groq
 
-from config import GROQ_API_KEY, GROQ_MODEL, MAX_OUTPUT_TOKENS, TEMPERATURE
+from config import GROQ_API_KEYS, GROQ_MODEL, MAX_OUTPUT_TOKENS, TEMPERATURE
+from llm import QuotaExhaustedError
 
 logger = logging.getLogger(__name__)
-
-
-def _get_client() -> Groq:
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY is not set. Please add it to your .env file.")
-    return Groq(api_key=GROQ_API_KEY)
 
 
 def generate_text(
@@ -42,7 +37,8 @@ def generate_text(
     Returns:
         Generated text string.
     """
-    client = _get_client()
+    if not GROQ_API_KEYS:
+        raise ValueError("GROQ_API_KEYS is empty. Please add keys to your .env file.")
 
     messages = []
     if system_prompt:
@@ -58,8 +54,22 @@ def generate_text(
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
-    response = client.chat.completions.create(**kwargs)
-    return response.choices[0].message.content
+    last_err = None
+    for api_key in GROQ_API_KEYS:
+        try:
+            client = Groq(api_key=api_key)
+            response = client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+        except Exception as exc:
+            err_msg = str(exc).lower()
+            if "429" in err_msg or "quota" in err_msg or "rate limit" in err_msg or "exhausted" in err_msg:
+                logger.warning(f"Groq API key {api_key[:10]}... failed: {exc}. Trying next...")
+                last_err = exc
+                continue
+            else:
+                raise
+                
+    raise QuotaExhaustedError("All Groq API keys have exhausted their quota or failed.") from last_err
 
 
 def generate_json(

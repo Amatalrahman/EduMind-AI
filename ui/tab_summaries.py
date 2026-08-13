@@ -46,12 +46,17 @@ def render_summaries_tab():
 
     if st.button("✨ Generate Summary", key="gen_summary_btn", type="primary"):
         with st.spinner("Retrieving relevant chunks and summarizing…"):
-            summary_text = summarize(
-                subject_id=subject_id,
-                title=title,
-                query=query,
-                top_k=12,
-            )
+            try:
+                from llm import QuotaExhaustedError
+                summary_text = summarize(
+                    subject_id=subject_id,
+                    title=title,
+                    query=query,
+                    top_k=12,
+                )
+            except QuotaExhaustedError as exc:
+                st.error(f"API Quota Exhausted: {exc}\n\nPlease try again later. Other non-AI features remain available.")
+                st.stop()
         st.markdown("---")
         st.subheader(f"Summary: {title}")
         st.markdown(summary_text)
