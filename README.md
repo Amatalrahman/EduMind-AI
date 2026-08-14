@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <img src="assets/logo.png" alt="EduMind logo" width="360"/>
 </p>
@@ -35,9 +37,13 @@
 
 ---
 
-## 🎥 Demo
+## screenshot 
 
 <p align="center">
+<img width="1600" height="730" alt="6404d59b-63ec-4c6a-bf81-c76633a83c79" src="https://github.com/user-attachments/assets/daa7ddbc-1bde-4e56-a8fe-360d1f2c0cf8" />
+<img width="1600" height="730" alt="618ea9fd-25f8-42fa-8c69-08d059b14ee4" src="https://github.com/user-attachments/assets/6b7b7fcc-de24-4df7-9a3e-90e53a66d548" />
+<img width="1600" height="730" alt="b1bf6932-026e-4e39-b5aa-624e4d9d2357" src="https://github.com/user-attachments/assets/b9d60c9b-4894-46e5-a9a8-b1fd0325e188" />
+
   <img src="assets/demo.gif" alt="EduMind demo" width="800"/>
 </p>
 
